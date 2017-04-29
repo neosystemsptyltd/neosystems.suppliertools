@@ -1,18 +1,20 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>6fdec78c-935a-40de-b5a1-c9f265ed6f6c</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{6FDEC78C-935A-40DE-B5A1-C9F265ED6F6C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NeoSystems.SupplierTools</RootNamespace>
     <AssemblyName>NeoSystems.SupplierTools</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -20,34 +22,123 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\NeoSystems.SupplierTools.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DocumentationFile>bin\Release\NeoSystems.SupplierTools.xml</DocumentationFile>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System"/>
-    
-    <Reference Include="System.Core"/>
-    <Reference Include="System.Xml.Linq"/>
-    <Reference Include="System.Data.DataSetExtensions"/>
-    
-    
-    <Reference Include="Microsoft.CSharp"/>
-    
-    <Reference Include="System.Data"/>
-    
-    <Reference Include="System.Net.Http"/>
-    
-    <Reference Include="System.Xml"/>
+    <Reference Include="Geckofx-Core, Version=45.0.30.0, Culture=neutral, PublicKeyToken=3209ac31600d1857, processorArchitecture=x86">
+      <HintPath>..\packages\Geckofx45.45.0.30\lib\net45\Geckofx-Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Geckofx-Winforms, Version=45.0.30.0, Culture=neutral, PublicKeyToken=3209ac31600d1857, processorArchitecture=x86">
+      <HintPath>..\packages\Geckofx45.45.0.30\lib\net45\Geckofx-Winforms.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data, Version=6.9.9.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <HintPath>..\packages\MySql.Data.6.9.9\lib\net45\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="NeoSystems.Tools, Version=0.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\neosystems.tools.0.0.3-alpha\lib\net452\NeoSystems.Tools.dll</HintPath>
+    </Reference>
+    <Reference Include="NeoSystems.WinFormsUtils, Version=0.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NeoSystems.WinFormsUtils.0.0.1-alpha\lib\net452\NeoSystems.WinFormsUtils.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="DigikeyOrder.cs" />
+    <Compile Include="DigikeyTools.cs" />
+    <Compile Include="GenericOrder.cs" />
+    <Compile Include="ManTechOrder.cs" />
+    <Compile Include="ManTechWebTools.cs" />
+    <Compile Include="MouserOrder.cs" />
+    <Compile Include="MouserWebTools.cs" />
+    <Compile Include="OrderLine.cs" />
+    <Compile Include="OtherOrder.cs" />
+    <Compile Include="OtherSuppliersWebTools.cs" />
+    <Compile Include="OttoMarketingOrder.cs" />
+    <Compile Include="OttoMarketingWebTools.cs" />
+    <Compile Include="PricingInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="RFDesignOrder.cs" />
+    <Compile Include="RFDesignTools.cs" />
+    <Compile Include="RSComponentsOrder.cs" />
+    <Compile Include="RSComponentsWebTools.cs" />
+    <Compile Include="SupplierOrderBase.cs" />
+    <Compile Include="SupplierWebToolsBase.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Firefox\omni.ja" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Firefox\AccessibleMarshal.dll" />
+    <Content Include="Firefox\breakpadinjector.dll" />
+    <Content Include="Firefox\d3dcompiler_47.dll" />
+    <Content Include="Firefox\freebl3.dll" />
+    <Content Include="Firefox\icudt56.dll" />
+    <Content Include="Firefox\icuin56.dll" />
+    <Content Include="Firefox\icuuc56.dll" />
+    <Content Include="Firefox\lgpllibs.dll" />
+    <Content Include="Firefox\libEGL.dll" />
+    <Content Include="Firefox\libGLESv2.dll" />
+    <Content Include="Firefox\mozglue.dll" />
+    <Content Include="Firefox\nss3.dll" />
+    <Content Include="Firefox\nssckbi.dll" />
+    <Content Include="Firefox\nssdbm3.dll" />
+    <Content Include="Firefox\plugin-container.exe" />
+    <Content Include="Firefox\plugin-hang-ui.exe" />
+    <Content Include="Firefox\sandboxbroker.dll" />
+    <Content Include="Firefox\softokn3.dll" />
+    <Content Include="Firefox\xul.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
- </Project>
+  <Import Project="..\packages\Geckofx45.45.0.30\build\Geckofx45.targets" Condition="Exists('..\packages\Geckofx45.45.0.30\build\Geckofx45.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Geckofx45.45.0.30\build\Geckofx45.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Geckofx45.45.0.30\build\Geckofx45.targets'))" />
+  </Target>
+</Project>
