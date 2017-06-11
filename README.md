@@ -22,6 +22,7 @@ from the following supliers' websites:
 
 # Need more info?
 
-We are working on some documentation ... please check back soon.
+We are working on some documentation ... please check back soon. In the meanwhile you can inspect the unit tests to understand how the library can be used.
+
 
 
