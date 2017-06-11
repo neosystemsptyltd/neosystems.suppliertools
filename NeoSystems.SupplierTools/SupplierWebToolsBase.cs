@@ -178,7 +178,6 @@ using System.Windows.Forms;
 
 using MySql.Data;
 using MySql.Data.MySqlClient;
-using Gecko;
 using NeoSystems.Tools;
 using NeoSystems.WinFormsUtils;
 
@@ -246,6 +245,14 @@ namespace NeoSystems.SupplierTools
         }
 
         /// <summary>
+        /// Url property
+        /// </summary>
+        public string UrlProductionQty
+        {
+            get { return m_url + "P"; }
+        }
+
+        /// <summary>
         /// Partnumber property
         /// </summary>
         public string PartNumber 
@@ -269,96 +276,34 @@ namespace NeoSystems.SupplierTools
         public abstract void BuildUrl(string pn);
 
         /// <summary>
-        /// Load the page data for this supplier
+        /// Set the partnumber and currency
         /// </summary>
-        /// <param name="pn"></param>
-        /// <param name="ToCurrency">Currency to report the values in</param>
-        public void LoadPageData(string pn, string ToCurrency = "ZAR")
+        /// <param name="pn">partnumber to use</param>
+        /// <param name="ToCurrency">currency (default ZAR)</param>
+        public void SetPartNumberData(string pn, string ToCurrency = "ZAR")
         {
             BuildUrl(pn);
             m_defDestCurrency = ToCurrency;
             m_partnumber = pn;
-            int retry = 4;
-            while(retry > 0)
-            {
-                retry--;
-                try
-                {
-                    m_webpagedata = WebUtils.DownloadWebPage(Url);
-                    retry = 0;
-                }
-                catch(Exception ex)
-                {
-                    if (retry <= 0) throw ex;
-                }
-            }
-            m_webpagelines = m_webpagedata.Split(new char[] {'\n'});
         }
 
         /// <summary>
-        /// Load the page data for this supplier
+        /// Set the webpage data
         /// </summary>
-        /// <param name="wb">WebBrowser object</param>
-        /// <param name="pn">part number</param>
-        /// <param name="ToCurrency">Currency to report the values in</param>
-        public void LoadPageData(WebBrowser wb, string pn, string ToCurrency = "ZAR")
+        /// <param name="pagestr"></param>
+        public void SetPageData(string pagestr)
         {
-            BuildUrl(pn);
-            m_defDestCurrency = ToCurrency;
-            m_partnumber = pn;
-            int retry = 4;
-            while (retry > 0)
-            {
-                retry--;
-                try
-                {
-                    wb.Navigate(Url);
-                    wb.WaitForDownload();
-                    Thread.Sleep(20000);
-                    m_webpagedata = wb.DocumentText;
-                    retry = 0;
-                }
-                catch (Exception ex)
-                {
-                    if (retry <= 0) throw ex;
-                }
-            }
+            m_webpagedata = pagestr;
             m_webpagelines = m_webpagedata.Split(new char[] { '\n' });
         }
 
         /// <summary>
-        /// Load the page data for this supplier
+        /// merge more page data into the current page data
         /// </summary>
-        /// <param name="wb">Gecko WebBrowser object</param>
-        /// <param name="pn">part number</param>
-        /// <param name="ToCurrency">Currency to report the values in</param>
-        public void LoadPageData(GeckoWebBrowser wb, string pn, string ToCurrency = "ZAR")
+        /// <param name="pagestr">Page to add</param>
+        public void AddPageData(string pagestr)
         {
-            BuildUrl(pn);
-            m_defDestCurrency = ToCurrency;
-            m_partnumber = pn;
-            int retry = 4;
-            while (retry > 0)
-            {
-                retry--;
-                try
-                {
-                    wb.Navigate(Url);
-                    for (int i = 0; i < 100; i++)
-                    {
-                        Thread.Sleep(100);
-                        Application.DoEvents();
-                    }
-                        
-                    m_webpagedata = wb.Document.Body.InnerHtml;
-                    retry = 0;
-                }
-                catch (Exception ex)
-                {
-                    if (retry <= 0) throw ex;
-                }
-            }
-            m_webpagelines = m_webpagedata.Split(new char[] { '\n' });
+
         }
 
         /// <summary>
@@ -378,6 +323,23 @@ namespace NeoSystems.SupplierTools
         /// </summary>
         /// <returns>Manufacturer part number</returns>
         public abstract string GetManufacturerPartNo();
-    }
 
+        /// <summary>
+        /// Fix the maximum price quantities
+        /// </summary>
+        /// <param name="p"></param>
+        public void FixMaximumQtys(ref List<PricingInfo> p)
+        {
+            int i;
+
+            // fix the maximum values
+            for (i = 0; i < (p.Count() - 1); i++)
+            {
+                PricingInfo tp = p[i];
+                tp.maxqty = p[i + 1].minqty - 1;
+                p[i] = tp;
+            }
+        }
+
+    }
 }

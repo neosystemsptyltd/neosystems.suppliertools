@@ -173,6 +173,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HtmlAgilityPack;
 
 namespace NeoSystems.SupplierTools
 {
@@ -189,8 +190,8 @@ namespace NeoSystems.SupplierTools
         {
             /* Old URL: before Feb 2014
              * Url = "http://www.otto.co.za/index.php?page=product&p=" + pn; */
-            Url = "http://www.otto.co.za/search/?q=" + pn;
-
+            //Url = "http://www.otto.co.za/search/?q=" + pn;
+            Url = "http://www.otto.co.za/product/" + pn + "/";
         }
 
         /// <summary>
@@ -217,6 +218,36 @@ namespace NeoSystems.SupplierTools
         /// <returns></returns>
         public override PricingInfo[] GetPricingInfo()
         {
+            try
+            {
+                List<PricingInfo> l = new List<PricingInfo>(5);
+
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNodeCollection prices = htmlDoc.DocumentNode.SelectNodes(@"//span[@itemprop='price']");
+
+                if ((prices != null) && (prices.Count == 1))
+                {
+                    foreach(HtmlNode pricenode in prices)
+                    {
+                        string pricestr = pricenode.InnerText;
+                        double sourceprice = double.Parse(pricestr);
+                        double destprice = sourceprice;
+
+                        PricingInfo p = new PricingInfo("ZAR", "ZAR", destprice, sourceprice, 1, 999999);
+                        l.Add(p);
+                    }
+                }
+
+                return l.ToArray();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            /*
             try
             {
                 int state = 0;
@@ -258,6 +289,7 @@ namespace NeoSystems.SupplierTools
             {
                 throw ex;
             }
+            */
         }
     }
 

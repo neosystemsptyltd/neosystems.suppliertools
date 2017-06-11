@@ -173,6 +173,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NeoSystems.Tools;
+using HtmlAgilityPack;
 
 namespace NeoSystems.SupplierTools
 {
@@ -198,6 +199,22 @@ namespace NeoSystems.SupplierTools
         {
             try
             {
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                //HtmlNodeCollection nodes1 = htmlDoc.DocumentNode.SelectNodes(@"//body//div[@id='ctl00_ContentPlaceHolder1_Panel4']//table[@id='ctl00_ContentPlaceHolder1_FormView1']//tr[2]//table");
+                HtmlNodeCollection nodes = htmlDoc.DocumentNode.SelectNodes(@"//body//div[@id='ctl00_ContentPlaceHolder1_Panel4']//table[@id='ctl00_ContentPlaceHolder1_FormView1']//tr[2]//table//tr[1]//table//tr[4]//td[3]//span");
+
+                if (nodes != null)
+                {
+                    return nodes[0].InnerText.Trim();
+                }
+                else
+                {
+                    return "<UNKNOWN>";
+                }
+
+                /*
                 string res = "";
                 for (int i = 0; i < WebPageLines.Count(); i++)
                 {
@@ -209,6 +226,7 @@ namespace NeoSystems.SupplierTools
                     }
                 }
                 return res;
+                */
             }
             catch (Exception ex)
             {
@@ -223,7 +241,22 @@ namespace NeoSystems.SupplierTools
         public override string GetManufacturerPartNo()
         {
             try
-            {
+            {                
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNodeCollection nodes = htmlDoc.DocumentNode.SelectNodes(@"//body//div[@id='ctl00_ContentPlaceHolder1_Panel4']//table[@id='ctl00_ContentPlaceHolder1_FormView1']//tr[2]//table//tr[1]//table//tr[2]//td[3]//span");
+
+                if (nodes != null)
+                {
+                    return nodes[0].InnerText.Trim();
+                }
+                else
+                {
+                    return "<UNKNOWN>";
+                }
+
+                /*
                 string res = "";
                 for (int i = 0; i < WebPageLines.Count(); i++)
                 {
@@ -235,6 +268,7 @@ namespace NeoSystems.SupplierTools
                     }
                 }
                 return res;
+                */
             }
             catch (Exception ex)
             {
@@ -250,64 +284,106 @@ namespace NeoSystems.SupplierTools
         {
             try
             {
-                int state = 0;
                 List<PricingInfo> priceslist = new List<PricingInfo>(50);
 
-                for (int i = 0; (i < WebPageLines.Count()) && (state < 2); i++)
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNodeCollection tablerows = htmlDoc.DocumentNode.SelectNodes(@"//div[@id='ctl00_ContentPlaceHolder1_FormView1_Panel2']//tr");
+
+                if (tablerows != null)
                 {
-                    string line = WebPageLines[i];
-                    switch (state)
+                    foreach(HtmlNode tablerow in tablerows)
                     {
-                        case 0: // look for price marker
-                            if (line.Contains("Price</td>"))
+                        HtmlNodeCollection tablecols = tablerow.SelectNodes(@".//td");
+
+                        if (tablecols != null)
+                        {
+                            if (tablecols.Count == 2)
                             {
-                                state = 1;
+                                HtmlNodeCollection rowqtys = tablecols[0].SelectNodes(@".//span");
+                                HtmlNodeCollection pricenode = tablecols[1].SelectNodes(@".//span");
+
+                                if ((rowqtys != null) && (pricenode != null))
+                                {
+                                    int minqty = int.Parse(rowqtys[0].InnerText.Trim());
+                                    int maxqty = int.Parse(rowqtys[2].InnerText.Trim());
+                                    double srcunitprice = double.Parse(pricenode[1].InnerText.Trim());
+                                    double destunitprice = Currency.Convert("ZAR", DefDestCurrency, srcunitprice);
+
+                                    PricingInfo p = new PricingInfo("ZAR", DefDestCurrency, srcunitprice, destunitprice, minqty, 999999);
+                                    priceslist.Add(p);
+                                }
                             }
-                            break;
+                        }
 
-                        case 1: // 
-                            if (line.Contains("On Request"))
-                            {
-                                PricingInfo p = new PricingInfo(true);
-                                priceslist.Add(p);
-                                state = 2;
-                            }
-                            else if (line.Contains("<span id=\""))
-                            {
-                                // we have the start of pricing info
-                                string t = "";
-                                PricingInfo p = new PricingInfo();
-
-                                t = StringUtils.GetTextBetweenMarkers(WebPageLines[i], "\">", "</span>");
-                                Int32.TryParse(t, out p.minqty);
-
-                                t = StringUtils.GetTextBetweenMarkers(WebPageLines[i + 2], "\">", "</span>");
-                                Int32.TryParse(t, out p.maxqty);
-
-                                t = StringUtils.GetTextBetweenMarkers(WebPageLines[i + 6], "\">", "</span>");
-                                Double.TryParse(t, out p.SrcCost);
-                                p.DestCost = p.SrcCost;
-                                p.destCurr = "ZAR";
-                                p.srcCurr = "ZAR";
-                                priceslist.Add(p);
-                                i += 8;
-                            }
-                            else if (line.Contains("</table>"))
-                            {
-                                // we are done with pricing for this part
-                                state = 2;
-                            }
-                            break;
-
-                        case 2:
-                            break;
-
-                        default:
-                            state = 0;
-                            break;
                     }
                 }
+
+                FixMaximumQtys(ref priceslist);
                 return priceslist.ToArray();
+
+                /*
+                                int state = 0;
+                                List<PricingInfo> priceslist = new List<PricingInfo>(50);
+
+                                for (int i = 0; (i < WebPageLines.Count()) && (state < 2); i++)
+                                {
+                                    string line = WebPageLines[i];
+                                    switch (state)
+                                    {
+                                        case 0: // look for price marker
+                                            if (line.Contains("Price</td>"))
+                                            {
+                                                state = 1;
+                                            }
+                                            break;
+
+                                        case 1: // 
+                                            if (line.Contains("On Request"))
+                                            {
+                                                PricingInfo p = new PricingInfo(true);
+                                                priceslist.Add(p);
+                                                state = 2;
+                                            }
+                                            else if (line.Contains("<span id=\""))
+                                            {
+                                                // we have the start of pricing info
+                                                string t = "";
+                                                PricingInfo p = new PricingInfo();
+
+                                                t = StringUtils.GetTextBetweenMarkers(WebPageLines[i], "\">", "</span>");
+                                                Int32.TryParse(t, out p.minqty);
+
+                                                t = StringUtils.GetTextBetweenMarkers(WebPageLines[i + 2], "\">", "</span>");
+                                                Int32.TryParse(t, out p.maxqty);
+
+                                                t = StringUtils.GetTextBetweenMarkers(WebPageLines[i + 6], "\">", "</span>");
+                                                Double.TryParse(t, out p.SrcCost);
+                                                p.DestCost = p.SrcCost;
+                                                p.destCurr = "ZAR";
+                                                p.srcCurr = "ZAR";
+                                                priceslist.Add(p);
+                                                i += 8;
+                                            }
+                                            else if (line.Contains("</table>"))
+                                            {
+                                                // we are done with pricing for this part
+                                                state = 2;
+                                            }
+                                            break;
+
+                                        case 2:
+                                            break;
+
+                                        default:
+                                            state = 0;
+                                            break;
+                                    }
+                                }
+                                return priceslist.ToArray();
+
+                */
             }
             catch (Exception ex)
             {

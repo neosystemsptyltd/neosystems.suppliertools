@@ -175,6 +175,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using NeoSystems.Tools;
+using HtmlAgilityPack;
 
 namespace NeoSystems.SupplierTools
 {
@@ -210,97 +211,37 @@ namespace NeoSystems.SupplierTools
         {
             try
             {
-                string qtystr;
-                int qty = 0;
-                string unitpricestr;
-                double srcunitprice;
-
-                int state = 0;
                 List<PricingInfo> priceslist = new List<PricingInfo>(50);
-                int i;
 
-                for (i = 0; (i < WebPageLines.Count()) && (state < 11); i++)
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+                
+                HtmlNode node = htmlDoc.GetElementbyId("product-dollars");
+                HtmlNodeCollection tablerows = node.SelectNodes("tbody//tr");
+
+                foreach(HtmlNode row in tablerows)
                 {
-                    string line = WebPageLines[i];
-                    switch (state)
+                    HtmlNodeCollection tablecolumns = row.SelectNodes("td");
+
+                    if (!ReferenceEquals(tablecolumns,null))
                     {
-                        case 0: // look for "Price Break" text
-                            if (line.Contains("Price Break"))
-                            {
-                                state = 1;
-                            }
-                            break;
+                        if (tablecolumns.Count() > 2)
+                        {
+                            HtmlNode[] cols = tablecolumns.ToArray();
 
-                        case 1: // skip a line: <th>Unit Price</th>
-                            state = 2;
-                            break;
+                            string minqtystr = cols[0].InnerText;
+                            minqtystr = minqtystr.Replace(",", "");
+                            int minqty = Int32.Parse(minqtystr);
+                            double srcunitprice = Double.Parse(cols[1].InnerText);
+                            double destprice = Currency.Convert("USD", DefDestCurrency, srcunitprice);
 
-                        case 2: // skip a line: <th>Extended Price</th>
-                            state = 3;
-                            break;
-
-                        case 3: // skip a line:  </tr>
-                            state = 4;
-                            break;
-
-                        case 4: // skip a line:  <tr>
-                            state = 6;
-                            break;
-
-                        case 6: // parse qty on line:  < td > 1 </ td > ----> (qty)
-                            qtystr = StringUtils.GetTextBetweenMarkers(line, "<td>", "</td>");
-                            qtystr = qtystr.Replace(",", "");
-                            qty = 0;
-                            Int32.TryParse(qtystr, out qty);
-                            state = 7;
-                            break;
-
-                        case 7: // parse unit price on line:  < td > 1 </ td > ----> (unit price)
-                            unitpricestr = StringUtils.GetTextBetweenMarkers(line, "<td>", "</td>");
-                            Double.TryParse(unitpricestr, out srcunitprice);
-                            double destprice = Currency.Convert("USD", "ZAR", srcunitprice);
-                            PricingInfo p = new PricingInfo("USD", "ZAR", srcunitprice, destprice, qty, 999999);
+                            PricingInfo p = new PricingInfo("USD", DefDestCurrency, srcunitprice,destprice,minqty,999999);
                             priceslist.Add(p);
-                            state = 8;
-                            break;
-
-                        case 8: // skip a line: (<td >0.10</td>)
-                            state = 9;
-                            break;
-
-                        case 9: // skip a line: </tr>
-                            state = 10;
-                            break;
-
-                        case 10: // should be: <tr>
-                            if (line.Contains("<tr>"))
-                            {
-                                // then there are more prices to follow
-                                state = 6;
-                            }
-                            else
-                            {
-                                // we are done
-                                state = 11;
-                            }
-                            break;
-
-                        case 11:
-                            break;
-
-                        default:
-                            state = 0;
-                            break;
+                        }
                     }
                 }
 
-                // fix the maximum values
-                for (i = 0; i < (priceslist.Count() - 1); i++)
-                {
-                    PricingInfo tp = priceslist[i];
-                    tp.maxqty = priceslist[i + 1].minqty - 1;
-                    priceslist[i] = tp;
-                }
+                FixMaximumQtys(ref priceslist);
 
                 return priceslist.ToArray();
             }
@@ -308,7 +249,6 @@ namespace NeoSystems.SupplierTools
             {
                 throw ex;
             }
-
         }
 
         /// <summary>
@@ -319,6 +259,20 @@ namespace NeoSystems.SupplierTools
         {
             try
             {
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNode node = htmlDoc.DocumentNode.SelectSingleNode(@"//body//div//td//h2[@itemprop='manufacturer']//span[@itemprop='name']");
+
+                if (node != null)
+                {
+                    return node.InnerText.Trim();
+                }
+                else
+                {
+                    return "<UNKNOWN>";
+                }
+                /*
                 string res = "<UNKNOWN>";
                 int i;
                 string line;
@@ -339,6 +293,7 @@ namespace NeoSystems.SupplierTools
                     }
                 }
                 return res;
+                */
             }
             catch (Exception ex)
             {
@@ -354,7 +309,23 @@ namespace NeoSystems.SupplierTools
         {
             try
             {
-                string res = "<UNKNOWN>";
+                //string res = "<UNKNOWN>";
+
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNode node = htmlDoc.DocumentNode.SelectSingleNode(@"//body//div//td//h1[@itemprop='model']");
+
+                if (node != null)
+                {
+                    return node.InnerText.Trim();
+                }
+                else
+                {
+                    return "<UNKNOWN>";
+                }
+
+                /*
                 int i;
                 string line;
                 for (i = 0; (i < WebPageLines.Count()); i++)
@@ -368,7 +339,9 @@ namespace NeoSystems.SupplierTools
                         return res;
                     }
                 }
+
                 return res;
+    */
             }
             catch (Exception ex)
             {

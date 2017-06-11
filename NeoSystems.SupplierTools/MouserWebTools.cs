@@ -174,13 +174,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using HtmlAgilityPack;
 
 namespace NeoSystems.SupplierTools
 {
     /// <summary>
     /// Mouser website webtools
     /// NOTE: mouser generic search url :
-    /// http://www.mouser.com/_/N-scv7?Keyword=
+    /// was: http://www.mouser.com/_/N-scv7?Keyword=
+    /// now: http://www.mouser.co.za/search/ProductDetail.aspx?R=
     /// </summary>
     public class MouserWebtools : SupplierWebToolsBase
     {
@@ -198,10 +200,9 @@ namespace NeoSystems.SupplierTools
         public override void BuildUrl(string pn)
         {
             string temp = HttpUtility.UrlEncode(pn);
-            // was: Url = @"http://www.mouser.com/_/N-scv7?Keyword=" + temp;
 
             // changed to accommodate parts not in stock
-            Url = @"http://www.mouser.com/_/N-scv9?Keyword=" + temp;
+            Url = @"http://www.mouser.co.za/search/ProductDetail.aspx?R=" + temp;
         }
 
         /// <summary>
@@ -212,6 +213,20 @@ namespace NeoSystems.SupplierTools
         {
             try
             {
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNode node = htmlDoc.DocumentNode.SelectSingleNode(@"//body//span[@itemprop='name']");
+
+                if (node != null)
+                {
+                    return node.InnerText.Trim();
+                }
+                else
+                {
+                    return "<UNKNOWN>";
+                }
+                /*
                 for (int i = 0; i < WebPageLines.Count(); i++)
                 {
                     string s = WebPageLines[i];
@@ -221,7 +236,7 @@ namespace NeoSystems.SupplierTools
                         return StringUtils.GetTextBetweenMarkers(temp, @""">", @"</a>");
                     }
                 }
-                return "";
+                return "";*/
             }
             catch (Exception ex)
             {
@@ -237,6 +252,21 @@ namespace NeoSystems.SupplierTools
         {
             try
             {
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNode node = htmlDoc.DocumentNode.SelectSingleNode(@"//body//div[@id='divManufacturerPartNum']//h1");
+
+                if (node != null)
+                {
+                    return node.InnerText.Trim();
+                }
+                else
+                {
+                    return "<UNKNOWN>";
+                }
+
+                /*
                 string res = "";
                 for (int i = 0; i < WebPageLines.Count(); i++)
                 {
@@ -248,7 +278,7 @@ namespace NeoSystems.SupplierTools
                         return res.Trim();
                     }
                 }
-                return res;
+                return res;*/
             }
             catch (Exception ex)
             {
@@ -262,81 +292,127 @@ namespace NeoSystems.SupplierTools
         /// <returns></returns>
         public override PricingInfo[] GetPricingInfo()
         {
-            int i = 0;
-            int state = 0;
-            int qty = 0;
-            double price;
-            List<PricingInfo> priceslist = new List<PricingInfo>(50);
-
             try
             {
-                while ((i < WebPageLines.Count()) && (state < 2))
+                List<PricingInfo> priceslist = new List<PricingInfo>(50);
+                bool Done = false;
+
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                for(int i=1; (i<1000) && (!Done); i++)
                 {
-                    switch (state)
+                    string qstr = string.Format("ctl00_ContentMain_ucP_rptrPriceBreaks_ctl0{0}_lnkQuantity", i);
+                    string pstr = string.Format("ctl00_ContentMain_ucP_rptrPriceBreaks_ctl0{0}_lblPrice", i);
+
+                    HtmlNode nodeqty = htmlDoc.GetElementbyId(qstr);
+                    HtmlNode nodeprice = htmlDoc.GetElementbyId(pstr);
+
+                    if ((nodeprice != null) && (nodeprice != null))
                     {
-                        case 0:
-                            if (WebPageLines[i].Contains(@"<table class=""PriceBreaks"" cellspacing=""0"">"))
-                            {
-                                state = 1;
-                                i += 11;
-                            }
-                            else
-                            {
-                                i++;
-                            }
-                            break;
+                        string qtystr = nodeqty.InnerText.Replace(",", ""); // AJTODO correctly parse thousands separator
+                        string pricestr = nodeprice.InnerText.Replace("$", ""); // AJTODO write a generic currency parser - or use an existing one
 
-                        case 1:
-                            string res = StringUtils.GetTextBetweenMarkers(WebPageLines[i], @""">", "</a>");
-                            res = StringUtils.StringToNumericsOnly(res);
-                            if (!Int32.TryParse(res, out qty))
-                            {
-                                throw new Exception("Invalid qty in mouser webpage.");
-                            }
+                        int min = Int32.Parse(qtystr);
+                        double srcunitprice = double.Parse(pricestr);
+                        double destprice = Currency.Convert("USD", DefDestCurrency, srcunitprice);
 
-                            string pricestr;
-                            if (!WebPageLines[i + 3].Contains(@"Quote</></span>"))
-                            {
-                                pricestr = StringUtils.GetTextBetweenMarkers(WebPageLines[i + 3], @""">$", "</span>");
-                                if (!Double.TryParse(pricestr, out price))
-                                {
-                                    throw new Exception("Invalid price in mouser webpage.");
-                                }
-                                double destprice = Currency.Convert("USD", "ZAR", price);
-                                PricingInfo p = new PricingInfo("USD", "ZAR", price, destprice, qty, 9999999);
-                                priceslist.Add(p);
-
-                            }
-                            if ((WebPageLines[i + 16] == "<tr>") &&
-                                (!WebPageLines[i + 3].Contains(@"Quote</></span>")))
-                            {
-                                i += 19;
-                            }
-                            else
-                            {
-                                state = 2;
-                            }
-                            break;
-
-                        default:
-                            break;
+                        PricingInfo p = new PricingInfo("USD", DefDestCurrency, srcunitprice, destprice, min, 999999);
+                        priceslist.Add(p);
+                    }
+                    else
+                    {
+                        Done = true;
                     }
                 }
 
-                // fix the maximum values
-                for (i = 0; i < (priceslist.Count() - 1); i++)
-                {
-                    PricingInfo tp = priceslist[i];
-                    tp.maxqty = priceslist[i + 1].minqty - 1;
-                    priceslist[i] = tp;
-                }
+                FixMaximumQtys(ref priceslist);
 
                 return priceslist.ToArray();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                throw e;
+                throw ex;
             }
+
+            /*
+             * 
+                        int i = 0;
+                        int state = 0;
+                        int qty = 0;
+                        double price;
+                        List<PricingInfo> priceslist = new List<PricingInfo>(50);
+
+                        try
+                        {
+                            while ((i < WebPageLines.Count()) && (state < 2))
+                            {
+                                switch (state)
+                                {
+                                    case 0:
+                                        if (WebPageLines[i].Contains(@"<table class=""PriceBreaks"" cellspacing=""0"">"))
+                                        {
+                                            state = 1;
+                                            i += 11;
+                                        }
+                                        else
+                                        {
+                                            i++;
+                                        }
+                                        break;
+
+                                    case 1:
+                                        string res = StringUtils.GetTextBetweenMarkers(WebPageLines[i], @""">", "</a>");
+                                        res = StringUtils.StringToNumericsOnly(res);
+                                        if (!Int32.TryParse(res, out qty))
+                                        {
+                                            throw new Exception("Invalid qty in mouser webpage.");
+                                        }
+
+                                        string pricestr;
+                                        if (!WebPageLines[i + 3].Contains(@"Quote</></span>"))
+                                        {
+                                            pricestr = StringUtils.GetTextBetweenMarkers(WebPageLines[i + 3], @""">$", "</span>");
+                                            if (!Double.TryParse(pricestr, out price))
+                                            {
+                                                throw new Exception("Invalid price in mouser webpage.");
+                                            }
+                                            double destprice = Currency.Convert("USD", "ZAR", price);
+                                            PricingInfo p = new PricingInfo("USD", "ZAR", price, destprice, qty, 9999999);
+                                            priceslist.Add(p);
+
+                                        }
+                                        if ((WebPageLines[i + 16] == "<tr>") &&
+                                            (!WebPageLines[i + 3].Contains(@"Quote</></span>")))
+                                        {
+                                            i += 19;
+                                        }
+                                        else
+                                        {
+                                            state = 2;
+                                        }
+                                        break;
+
+                                    default:
+                                        break;
+                                }
+                            }
+
+                            // fix the maximum values
+                            for (i = 0; i < (priceslist.Count() - 1); i++)
+                            {
+                                PricingInfo tp = priceslist[i];
+                                tp.maxqty = priceslist[i + 1].minqty - 1;
+                                priceslist[i] = tp;
+                            }
+
+                            return priceslist.ToArray();
+                        }
+                        catch (Exception e)
+                        {
+                            throw e;
+                        }
+            */
 
         }
     }

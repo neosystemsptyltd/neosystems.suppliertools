@@ -173,6 +173,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HtmlAgilityPack;
 
 namespace NeoSystems.SupplierTools
 {
@@ -209,6 +210,21 @@ namespace NeoSystems.SupplierTools
         {
             try
             {
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNode node = htmlDoc.DocumentNode.SelectSingleNode(@"//body//span[@itemprop='brand']");
+
+                if (node != null)
+                {
+                    return node.InnerText.Trim();
+                }
+                else
+                {
+                    return "<UNKNOWN>";
+                }
+
+                /*
                 string res = "";
                 for (int i = 0; i < WebPageLines.Count(); i++)
                 {
@@ -220,6 +236,7 @@ namespace NeoSystems.SupplierTools
                     }
                 }
                 return res;
+                */
             }
             catch (Exception ex)
             {
@@ -235,6 +252,21 @@ namespace NeoSystems.SupplierTools
         {
             try
             {
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNode node = htmlDoc.DocumentNode.SelectSingleNode(@"//body//span[@itemprop='mpn']");
+
+                if (node != null)
+                {
+                    return node.InnerText.Trim();
+                }
+                else
+                {
+                    return "<UNKNOWN>";
+                }
+
+                /*
                 string res = "";
                 for (int i = 0; i < WebPageLines.Count(); i++)
                 {
@@ -246,6 +278,7 @@ namespace NeoSystems.SupplierTools
                     }
                 }
                 return res;
+                */
             }
             catch (Exception ex)
             {
@@ -257,6 +290,73 @@ namespace NeoSystems.SupplierTools
 
         private void m_GetPricingInfo(string content, bool IsHigherQuantitiesPage = false)
         {
+            try
+            {
+                bool Done = false;
+                HtmlDocument htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(WebPageData);
+
+                HtmlNodeCollection pricetablenodes = htmlDoc.DocumentNode.SelectNodes(@"//div[@class='price-table']");
+
+                foreach(HtmlNode pricedetablenode in pricetablenodes)
+                {
+                    for (int i = 0; (i < 1000) && (!Done); i++)
+                    {
+                        string qstr = @"div[@id='value-row-" + i.ToString() + "']";
+
+                        HtmlNodeCollection noderows = pricedetablenode.SelectNodes(qstr); 
+
+                        if (noderows != null)
+                        {
+                            HtmlNode noderow = noderows[0];
+
+                            HtmlNodeCollection minmaxrangenodes = noderow.SelectNodes(@"div[@itemprop='eligibleQuantity']");
+                            HtmlNodeCollection pricenodes = noderow.SelectNodes(@"div[@class='unitPrice']");
+
+                            if ((minmaxrangenodes != null) && (pricenodes != null))
+                            {
+                                if (!minmaxrangenodes[0].InnerText.Contains("+"))
+                                {
+                                    string[] minmaxstr = minmaxrangenodes[0].InnerText.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+                                    int minqty = int.Parse(minmaxstr[0]);
+                                    int maxqty = int.Parse(minmaxstr[1]);
+
+                                    string pricetext = pricenodes[0].InnerText.Replace("R", "").Trim();
+                                    double srcunitprice = double.Parse(pricetext);
+                                    double destprice = Currency.Convert("ZAR", DefDestCurrency, srcunitprice);
+
+                                    PricingInfo p = new PricingInfo("ZAR", DefDestCurrency, srcunitprice, destprice, minqty, 999999);
+                                    lp.Add(p);
+                                }
+                                else if (!minmaxrangenodes[0].InnerText.Contains("-"))
+                                {
+                                    string[] minmaxstr = minmaxrangenodes[0].InnerText.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+                                    minmaxstr[0] = minmaxstr[0].Replace("+", "").Trim();
+                                    int minqty = int.Parse(minmaxstr[0]);
+
+                                    string pricetext = pricenodes[0].InnerText.Replace("R", "").Trim();
+                                    double srcunitprice = double.Parse(pricetext);
+                                    double destprice = Currency.Convert("ZAR", DefDestCurrency, srcunitprice);
+
+                                    PricingInfo p = new PricingInfo("ZAR", DefDestCurrency, srcunitprice, destprice, minqty, 999999);
+                                    lp.Add(p);
+                                }
+                            }
+                            else
+                            {
+                                Done = true;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+
+            /*
             try
             {
                 int idx = 0;
@@ -309,6 +409,7 @@ namespace NeoSystems.SupplierTools
             {
                 throw ex;
             }
+            */
         }
 
         /// <summary>
@@ -322,19 +423,17 @@ namespace NeoSystems.SupplierTools
                 lp = new List<PricingInfo>(50);
                 m_GetPricingInfo(WebPageContent); // for the main component site
 
-                if (WebPageContent.Contains("Higher Quantities"))
+                // fix pricing list
+                for(int i=0; i<lp.Count-1; i++)
                 {
-                    string pricebreakdownpage = WebUtils.DownloadWebPage(Url + "P");
-                    m_GetPricingInfo(pricebreakdownpage, true); // for the higher prices site
+                    if (lp[i].minqty == lp[i+1].minqty)
+                    {
+                        lp.RemoveAt(i);
+                        break;
+                    }
                 }
 
-                // fix the maximum values
-                for (int i = 0; i < (lp.Count() - 1); i++)
-                {
-                    PricingInfo tp = lp[i];
-                    tp.maxqty = lp[i + 1].minqty - 1;
-                    lp[i] = tp;
-                }
+                FixMaximumQtys(ref lp);
                 return lp.ToArray();
             }
             catch (Exception ex)
