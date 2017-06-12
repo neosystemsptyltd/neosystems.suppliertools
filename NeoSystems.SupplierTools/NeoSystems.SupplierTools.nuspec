@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>NeoSystems.SupplierTools</id>
-    <version>0.0.1-alpha</version>
+    <version>0.0.3-alpha</version>
     <title>NeoSystems.SupplierTools</title>
     <authors>armand</authors>
     <owners>armand</owners>
@@ -14,7 +14,6 @@
     <copyright>Copyright 2017</copyright>
     <tags>rs components mouser digikey otto mantech bill of materials costing</tags>
 	<dependencies>
-        <dependency id="Geckofx45" version="45.0.30" />
         <dependency id="MySql.Data" version="6.9.9" />
         <dependency id="neosystems.tools" version="0.0.3-alpha" />
         <dependency id="NeoSystems.WinFormsUtils" version="0.0.1-alpha" />
