@@ -1,0 +1,1 @@
+nuget pack NeoSystems.SupplierTools.csproj -Prop Platform=AnyCPU -properties Configuration=Release -Verbosity detailed
