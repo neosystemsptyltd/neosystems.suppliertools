@@ -313,12 +313,19 @@ namespace NeoSystems.SupplierTools
                         string qtystr = nodeqty.InnerText.Replace(",", ""); // AJTODO correctly parse thousands separator
                         string pricestr = nodeprice.InnerText.Replace("$", ""); // AJTODO write a generic currency parser - or use an existing one
 
-                        int min = Int32.Parse(qtystr);
-                        double srcunitprice = double.Parse(pricestr);
-                        double destprice = Currency.Convert("USD", DefDestCurrency, srcunitprice);
+                        if ((qtystr != "") && (pricestr != ""))
+                        {
+                            int min = Int32.Parse(qtystr);
+                            if (!pricestr.Contains("Quote"))
+                            {
+                                double srcunitprice = double.Parse(pricestr);
+                                double destprice = Currency.Convert("USD", DefDestCurrency, srcunitprice);
 
-                        PricingInfo p = new PricingInfo("USD", DefDestCurrency, srcunitprice, destprice, min, 999999);
-                        priceslist.Add(p);
+                                PricingInfo p = new PricingInfo("USD", DefDestCurrency, srcunitprice, destprice, min, 999999);
+                                priceslist.Add(p);
+                            }
+                        }
+
                     }
                     else
                     {

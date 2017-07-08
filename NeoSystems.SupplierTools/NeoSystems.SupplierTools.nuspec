@@ -2,12 +2,12 @@
 <package >
   <metadata>
     <id>NeoSystems.SupplierTools</id>
-    <version>0.0.5-alpha</version>
+    <version>0.0.6-alpha</version>
     <title>NeoSystems.SupplierTools</title>
     <authors>armand</authors>
     <owners>armand</owners>
     <licenseUrl>https://www.gnu.org/licenses/lgpl-3.0.en.html</licenseUrl>
-    <projectUrl>https://github.com/neosystemsptyltd/neosystems.winformsutils</projectUrl>
+    <projectUrl>https://github.com/neosystemsptyltd/neosystems.suppliertools</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Neo Systems (Pty) Ltd Supplier Utilities</description>
     <releaseNotes>First alpha release.</releaseNotes>
@@ -15,7 +15,7 @@
     <tags>rs components mouser digikey otto mantech bill of materials costing</tags>
 	<dependencies>
         <dependency id="MySql.Data" version="6.9.9" />
-        <dependency id="neosystems.tools" version="0.0.3-alpha" />
+        <dependency id="neosystems.tools" version="0.0.4-alpha" />
         <dependency id="NeoSystems.WinFormsUtils" version="0.0.1-alpha" />
     </dependencies>
   </metadata>

@@ -184,17 +184,27 @@ namespace NeoSystems.SupplierTools.Tests
     [TestClass()]
     public class MouserWebtoolsTests
     {
-        /// <summary>
-        /// mouser prices test
-        /// NOTE: this test might fail if mouser changes their prices of price breaks
-        /// </summary>
-        [TestMethod()]
-        public void GetPricingInfoTest()
+        private struct Price
+        {
+            public int minqty;
+            public int maxqty;
+            public double price;
+
+            public Price(int _min, int _max, double _price)
+            {
+                minqty = _min;
+                maxqty = _max;
+                price = _price;
+            }
+        }
+
+        private bool TestPart(string pn, Price[] prices)
         {
             try
             {
+                int count = prices.Length;
                 MouserWebtools mwt = new MouserWebtools();
-                mwt.SetPartNumberData("STM32F030R8T6");
+                mwt.SetPartNumberData(pn);
                 PricingInfo[] priceinfo;
 
                 using (IWebDriver webdriver = new FirefoxDriver())
@@ -211,17 +221,66 @@ namespace NeoSystems.SupplierTools.Tests
                     priceinfo = mwt.GetPricingInfo();
                 }
 
+                bool Passed = true;
+                if (priceinfo.Count() == count)
+                {
+                    int i;
+
+                    for(i=0; i<count; i++)
+                    {
+                        if ((priceinfo[i].minqty != prices[i].minqty) || (priceinfo[i].maxqty != prices[i].maxqty) || (priceinfo[i].SrcCost != prices[i].price))
+                        {
+                            Passed = false;
+                        }
+                    }
+                }
+                else
+                {
+                    Passed = false;
+                }
+
+                return Passed;                    
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(string.Format("Part test ({0}) failed", pn), ex);
+            }
+        }
+        /// <summary>
+        /// mouser prices test
+        /// NOTE: this test might fail if mouser changes their prices of price breaks
+        /// </summary>
+        [TestMethod()]
+        public void GetPricingInfoTest()
+        {
+            try
+            {
+                Price[] prices_STM32F030R8T6 = new Price[7] {
+                    new Price(1,    9,      2.12),
+                    new Price(10,   99,     1.79),
+                    new Price(100,  499,    1.43),
+                    new Price(500,  999,    1.27),
+                    new Price(1000, 2499,   1.04),
+                    new Price(2500, 4999,   0.969),
+                    new Price(5000, 999999, 0.932)
+                    };
+
+                Price[] prices_810_C5750X7R1H106K = new Price[7] {
+                    new Price(1,     9,      2.53),
+                    new Price(10,    99,     2.08),
+                    new Price(100,   499,    1.23),
+                    new Price(500,   999,    1.12),
+                    new Price(1000,  1999,   1.04),
+                    new Price(2000,  9999,   0.984),
+                    new Price(10000, 999999, 0.94)
+                    };
 
                 Assert.IsTrue(
-                    (priceinfo.Count() == 7)
-                    && (priceinfo[0].minqty == 1) && (priceinfo[0].maxqty == 9) && (priceinfo[0].SrcCost == 2.12)
-                    && (priceinfo[1].minqty == 10) && (priceinfo[1].maxqty == 99) && (priceinfo[1].SrcCost == 1.79)
-                    && (priceinfo[2].minqty == 100) && (priceinfo[2].maxqty == 499) && (priceinfo[2].SrcCost == 1.43)
-                    && (priceinfo[3].minqty == 500) && (priceinfo[3].maxqty == 999) && (priceinfo[3].SrcCost == 1.27)
-                    && (priceinfo[4].minqty == 1000) && (priceinfo[4].maxqty == 2499) && (priceinfo[4].SrcCost == 1.04)
-                    && (priceinfo[5].minqty == 2500) && (priceinfo[5].maxqty == 4999) && (priceinfo[5].SrcCost == 0.969)
-                    && (priceinfo[6].minqty == 5000) && (priceinfo[6].maxqty == 999999) && (priceinfo[6].SrcCost == 0.932)
+                    TestPart("810-C5750X7R1H106K", prices_810_C5750X7R1H106K) &&
+                    TestPart("STM32F030R8T6", prices_STM32F030R8T6)
                     );
+
+
 
             }
             catch (Exception ex)
