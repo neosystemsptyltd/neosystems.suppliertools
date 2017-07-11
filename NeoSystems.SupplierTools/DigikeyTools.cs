@@ -201,7 +201,7 @@ namespace NeoSystems.SupplierTools
             string temp = HttpUtility.UrlEncode(pn);
             if (pn.Contains("/"))
             {
-                Url = @"https://www.digikey.com/products/en?keywords=" + temp;
+                Url = @"https://www.digikey.com/products/en?keywords=" + pn;
             }
             else
             {
