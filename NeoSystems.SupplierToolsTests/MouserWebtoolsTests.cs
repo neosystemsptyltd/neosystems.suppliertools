@@ -184,20 +184,6 @@ namespace NeoSystems.SupplierTools.Tests
     [TestClass()]
     public class MouserWebtoolsTests
     {
-        private struct Price
-        {
-            public int minqty;
-            public int maxqty;
-            public double price;
-
-            public Price(int _min, int _max, double _price)
-            {
-                minqty = _min;
-                maxqty = _max;
-                price = _price;
-            }
-        }
-
         private bool TestPart(string pn, Price[] prices)
         {
             try

@@ -72,10 +72,12 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="CommonTests.cs" />
     <Compile Include="DigikeyToolsTests.cs" />
     <Compile Include="MantechWebToolsTests.cs" />
     <Compile Include="MouserWebtoolsTests.cs" />
     <Compile Include="OttoMarketingWebToolsTests.cs" />
+    <Compile Include="Price.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="rswebtoolsTests.cs" />
   </ItemGroup>

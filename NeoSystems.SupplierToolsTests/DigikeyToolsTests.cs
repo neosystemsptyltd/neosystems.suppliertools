@@ -184,17 +184,13 @@ namespace NeoSystems.SupplierTools.Tests
     [TestClass()]
     public class DigikeyToolsTests
     {
-        /// <summary>
-        /// Test digikey pricing info get
-        /// NOTE: this test method might fail if Digikey changes their pricing or price breaks
-        /// </summary>
-        [TestMethod()]
-        public void GetPricingInfoTest()
+        private bool TestPart(string pn, Price[] prices)
         {
             try
             {
+                int count = prices.Length;
                 DigikeyTools dkt = new DigikeyTools();
-                dkt.SetPartNumberData("497-14045-ND");
+                dkt.SetPartNumberData(pn);
                 PricingInfo[] priceinfo;
 
                 using (IWebDriver webdriver = new FirefoxDriver())
@@ -211,16 +207,59 @@ namespace NeoSystems.SupplierTools.Tests
                     priceinfo = dkt.GetPricingInfo();
                 }
 
+                bool Passed = true;
+                if (priceinfo.Count() == count)
+                {
+                    int i;
+
+                    for (i = 0; i < count; i++)
+                    {
+                        if ((priceinfo[i].minqty != prices[i].minqty) || (priceinfo[i].maxqty != prices[i].maxqty) || (priceinfo[i].SrcCost != prices[i].price))
+                        {
+                            Passed = false;
+                        }
+                    }
+                }
+                else
+                {
+                    Passed = false;
+                }
+
+                return Passed;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(string.Format("Part test ({0}) failed", pn), ex);
+            }
+        }
+
+        /// <summary>
+        /// Test digikey pricing info get
+        /// NOTE: this test method might fail if Digikey changes their pricing or price breaks
+        /// </summary>
+        [TestMethod()]
+        public void GetPricingInfoTest()
+        {
+            try
+            {
+                Price[] prices_STM32F030R8T6 = new Price[5] {
+                    new Price(1,    9,        2.11),
+                    new Price(10,   99,       1.895),
+                    new Price(100,  499,      1.523),
+                    new Price(500,  999,      1.25126),
+                    new Price(1000, 999999,   1.03675)
+                    };
+
+                Price[] prices_MCP1316T = new Price[3] {
+                    new Price(1,     24,        0.61),
+                    new Price(25,    99,        0.50480),
+                    new Price(100,   999999,    0.46350)
+                    };
 
                 Assert.IsTrue(
-                    (priceinfo.Count() == 5)
-                    && (priceinfo[0].minqty == 1) && (priceinfo[0].maxqty == 9) && (priceinfo[0].SrcCost == 2.11)
-                    && (priceinfo[1].minqty == 10) && (priceinfo[1].maxqty == 99) && (priceinfo[1].SrcCost == 1.895)
-                    && (priceinfo[2].minqty == 100) && (priceinfo[2].maxqty == 499) && (priceinfo[2].SrcCost == 1.523)
-                    && (priceinfo[3].minqty == 500) && (priceinfo[3].maxqty == 999) && (priceinfo[3].SrcCost == 1.25126)
-                    && (priceinfo[4].minqty == 1000) && (priceinfo[4].maxqty == 999999) && (priceinfo[4].SrcCost == 1.03675)
+                    TestPart("MCP1316T-27LE/OTCT-ND", prices_MCP1316T) &&
+                    TestPart("497-14045-ND", prices_STM32F030R8T6)
                     );
-
             }
             catch (Exception ex)
             {
