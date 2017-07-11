@@ -199,7 +199,14 @@ namespace NeoSystems.SupplierTools
         public override void BuildUrl(string pn)
         {
             string temp = HttpUtility.UrlEncode(pn);
-            Url = @"http://www.digikey.com/scripts/DkSearch/dksus.dll?Detail&name=" + temp;
+            if (pn.Contains("/"))
+            {
+                Url = @"https://www.digikey.com/products/en?keywords=" + temp;
+            }
+            else
+            {
+                Url = @"http://www.digikey.com/scripts/DkSearch/dksus.dll?Detail&name=" + temp;
+            }
             // Url = Uri.EscapeUriString(Url);
         }
 
